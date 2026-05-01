@@ -30,27 +30,46 @@ linux_only_step
 
 # Headless deps — even if the user later switches to Playwright's bundled
 # browser, these system libs are what any chromium binary needs.
+#
+# Six of these went through the time_t-64-bit ("t64") transition in Ubuntu
+# 24.04 / Debian trixie. Older distros (Debian bookworm, Ubuntu 22.04) still
+# ship the pre-transition names. Resolve at runtime via apt-cache so the same
+# script works on bookworm, jammy, noble, and questing.
 log "Installing headless browser system dependencies"
-apt_install \
-  fonts-liberation \
-  libasound2t64 \
-  libatk-bridge2.0-0t64 \
-  libatk1.0-0t64 \
-  libatspi2.0-0t64 \
-  libcups2t64 \
-  libdbus-1-3 \
-  libdrm2 \
-  libgbm1 \
-  libgtk-3-0t64 \
-  libnspr4 \
-  libnss3 \
-  libwayland-client0 \
-  libxcomposite1 \
-  libxdamage1 \
-  libxfixes3 \
-  libxkbcommon0 \
-  libxrandr2 \
+
+deps=(
+  fonts-liberation
+  libdbus-1-3
+  libdrm2
+  libgbm1
+  libnspr4
+  libnss3
+  libwayland-client0
+  libxcomposite1
+  libxdamage1
+  libxfixes3
+  libxkbcommon0
+  libxrandr2
   xdg-utils
+)
+add_pkg() {
+  local cand
+  for cand in "$@"; do
+    if apt-cache show "$cand" >/dev/null 2>&1; then
+      deps+=("$cand")
+      return 0
+    fi
+  done
+  warn "None of [$*] available in apt — skipping (chrome may still work)"
+}
+add_pkg libasound2t64        libasound2
+add_pkg libatk-bridge2.0-0t64 libatk-bridge2.0-0
+add_pkg libatk1.0-0t64       libatk1.0-0
+add_pkg libatspi2.0-0t64     libatspi2.0-0
+add_pkg libcups2t64          libcups2
+add_pkg libgtk-3-0t64        libgtk-3-0
+
+apt_install "${deps[@]}"
 
 symlink_chrome() {
   local src="$1"
