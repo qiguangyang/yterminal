@@ -9,13 +9,17 @@
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 ensure_brew_in_path
 
+# On Linux, pyenv lives at ~/.pyenv (cloned in step 02). On macOS, brew puts it
+# on PATH already. Set PYENV_ROOT and prepend its bin so `have pyenv` succeeds
+# either way.
+export PYENV_ROOT="${PYENV_ROOT:-$HOME/.pyenv}"
+export PATH="$PYENV_ROOT/bin:$PATH"
+
 if ! have pyenv; then
-  err "pyenv not found. Run scripts/02-brew-packages.sh first."
+  err "pyenv not found. Run scripts/02-base-packages.sh first."
   exit 1
 fi
 
-export PYENV_ROOT="${PYENV_ROOT:-$HOME/.pyenv}"
-export PATH="$PYENV_ROOT/bin:$PATH"
 eval "$(pyenv init -)"
 
 ok "pyenv $(pyenv --version | awk '{print $2}')"
