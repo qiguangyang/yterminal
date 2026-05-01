@@ -13,8 +13,17 @@ if is_macos; then
     ok "brew already installed at $(command -v brew)"
   else
     log "Installing Homebrew from https://brew.sh"
-    NONINTERACTIVE=1 /bin/bash -c \
-      "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    # Homebrew's installer needs a way to run sudo. Two modes:
+    #   - Interactive (TTY available): let it prompt for the user's sudo
+    #     password. Works for any admin user, no NOPASSWD setup required.
+    #   - Non-interactive (CI/scripted, no TTY): set NONINTERACTIVE=1 so the
+    #     installer doesn't try to prompt; this requires passwordless sudo.
+    if [[ -t 0 ]] && { : <>/dev/tty; } 2>/dev/null; then
+      /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    else
+      NONINTERACTIVE=1 /bin/bash -c \
+        "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    fi
   fi
 
   ensure_brew_in_path
