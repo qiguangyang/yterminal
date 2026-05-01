@@ -7,7 +7,7 @@
 # defaults afterward makes it the default profile for new + startup windows.
 
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
-require_macos
+mac_only_step
 
 profile_file="$REPO_ROOT/config/ClearDark.terminal"
 profile_name="Clear Dark"   # value of the <key>name</key> in the plist

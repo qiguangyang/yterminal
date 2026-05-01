@@ -6,6 +6,41 @@
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 ensure_brew_in_path
 
+# Bun, pnpm, nvm installers all blindly append PATH/HOME exports to ~/.zshrc
+# and ~/.bashrc. If those files are already symlinks into our dotfiles repo
+# (after a prior run of step 07), the appends would pollute the source-of-truth
+# dotfile with host-specific paths. Detach any such symlinks for the duration
+# of this script so the installers scribble on a real local file (which step 07
+# later backs up). Re-link on exit so new shells still load our dotfiles.
+declare -a YTERM_RC_RELINKS=()
+
+protect_rc_symlink() {
+  local rc="$1"
+  [[ -L "$rc" ]] || return 0
+  local target
+  target="$(readlink "$rc")"
+  local content
+  content="$(cat "$rc" 2>/dev/null || true)"
+  rm "$rc"
+  printf '%s' "$content" > "$rc"
+  YTERM_RC_RELINKS+=("$rc::$target")
+}
+
+restore_rc_symlinks() {
+  local entry rc target
+  for entry in "${YTERM_RC_RELINKS[@]:-}"; do
+    [[ -z "$entry" ]] && continue
+    rc="${entry%%::*}"
+    target="${entry##*::}"
+    rm -f "$rc"
+    ln -s "$target" "$rc"
+  done
+}
+trap restore_rc_symlinks EXIT
+
+protect_rc_symlink "$HOME/.zshrc"
+protect_rc_symlink "$HOME/.bashrc"
+
 log "Installing nvm"
 export NVM_DIR="$HOME/.nvm"
 if [[ ! -s "$NVM_DIR/nvm.sh" ]]; then
@@ -30,8 +65,19 @@ have bun && ok "bun $(bun --version)"
 
 log "Installing pnpm"
 if ! have pnpm; then
+  # pnpm's installer needs $SHELL set to know which rc to touch. In contexts
+  # without a login shell (docker exec, CI runners) it's empty, so export a
+  # sane default into the environment so the installer (run via `sh -` over
+  # a pipe) can see it. The dotfiles manage PNPM_HOME / PATH themselves, so
+  # whichever shell the installer picks here is harmless.
+  export SHELL="${SHELL:-/bin/bash}"
   curl -fsSL https://get.pnpm.io/install.sh | sh -
 fi
-export PNPM_HOME="$HOME/Library/pnpm"
+# pnpm installer chooses a different default home per OS (mirrored in dotfiles/zshrc).
+if is_macos; then
+  export PNPM_HOME="$HOME/Library/pnpm"
+else
+  export PNPM_HOME="$HOME/.local/share/pnpm"
+fi
 export PATH="$PNPM_HOME:$PATH"
 have pnpm && ok "pnpm $(pnpm --version)"

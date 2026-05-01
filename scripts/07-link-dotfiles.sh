@@ -19,10 +19,8 @@ else
   warn "Personal git identity is intentionally not committed to this repo."
   echo "  Enter your git name and email now, or leave blank to skip."
 
-  printf "  git user.name  [skip]: "
-  read -r git_name || git_name=""
-  printf "  git user.email [skip]: "
-  read -r git_email || git_email=""
+  git_name="$(prompt_with_timeout  "  git user.name " "")"
+  git_email="$(prompt_with_timeout "  git user.email" "")"
 
   if [[ -n "$git_name"  ]]; then git config --global user.name  "$git_name";  ok "Set user.name = $git_name";   fi
   if [[ -n "$git_email" ]]; then git config --global user.email "$git_email"; ok "Set user.email = $git_email"; fi

@@ -4,8 +4,12 @@
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 ensure_brew_in_path
 
+# On Linux, step 02 installs nvim under ~/.local/bin — make sure that's on PATH
+# for this script's own lookup.
+export PATH="$HOME/.local/bin:$PATH"
+
 if ! have nvim; then
-  err "nvim not found — run scripts/01-brew-packages.sh first."
+  err "nvim not found — run scripts/02-base-packages.sh first."
   exit 1
 fi
 
