@@ -43,11 +43,22 @@ if ! has_browser_opener; then
   exit 0
 fi
 
+# Default to skip — the OAuth flow takes the user out of the terminal into a
+# browser and can stall the install if they're not ready. Type "y" within the
+# 30s timeout to opt in; otherwise we skip and tell them how to authenticate
+# later. This makes the installer safe to walk away from on macOS, where the
+# browser opener IS available and would otherwise stall waiting for input.
+auth_choice="$(prompt_with_timeout "  Sign in to GitHub now? [y/skip]" "skip")"
+if [[ ! "$auth_choice" =~ ^[Yy] ]]; then
+  warn "Skipping GitHub auth. Authenticate later with:"
+  warn "  gh auth login --hostname github.com --git-protocol ssh --web"
+  exit 0
+fi
+
 log "Launching interactive GitHub login (gh auth login)"
 warn "Choose: GitHub.com → SSH → use existing ~/.ssh/id_ed25519 → login via browser"
 
-# Pre-select reasonable defaults but still let the user step through the flow.
-# --git-protocol ssh ties git remotes to the SSH key just generated in step 08.
+# --git-protocol ssh ties git remotes to the SSH key generated in step 08.
 gh auth login --hostname github.com --git-protocol ssh --web
 
 if gh auth status >/dev/null 2>&1; then
