@@ -49,7 +49,9 @@ protect_rc_symlink "$HOME/.bashrc"
 if [[ -f "$HOME/.npmrc" ]] && grep -qE '^[[:space:]]*(prefix|globalconfig)[[:space:]]*=' "$HOME/.npmrc"; then
   warn "~/.npmrc has 'prefix' or 'globalconfig' — incompatible with nvm. Stripping (backup at ~/.npmrc.preyterm.bak)."
   cp "$HOME/.npmrc" "$HOME/.npmrc.preyterm.bak"
-  grep -vE '^[[:space:]]*(prefix|globalconfig)[[:space:]]*=' "$HOME/.npmrc.preyterm.bak" > "$HOME/.npmrc"
+  # sed -d (not grep -v) so an .npmrc that contained ONLY the offending lines
+  # ends up empty without returning 1 and tripping set -e.
+  sed -E '/^[[:space:]]*(prefix|globalconfig)[[:space:]]*=/d' "$HOME/.npmrc.preyterm.bak" > "$HOME/.npmrc"
 fi
 
 log "Installing nvm"
