@@ -40,11 +40,14 @@ else
   # who want a passphrase can type "y" within the timeout to fall through to
   # ssh-keygen's own interactive prompt (which asks twice with confirmation).
   passphrase_choice="$(prompt_with_timeout "  Set a passphrase? (recommended for shared machines) [empty/y]" "empty")"
+  # The ${arr[@]+"${arr[@]}"} idiom is the bash-3.2-safe way to expand a
+  # possibly-empty array under `set -u`. macOS ships bash 3.2 by default,
+  # which errors on plain "${arr[@]}" when the array is empty.
   if [[ "$passphrase_choice" =~ ^[Yy] ]]; then
     warn "ssh-keygen will now prompt for a passphrase. Press Enter twice to abort and use empty instead."
-    ssh-keygen -t ed25519 -f "$key" "${comment_args[@]}"
+    ssh-keygen -t ed25519 -f "$key" ${comment_args[@]+"${comment_args[@]}"}
   else
-    ssh-keygen -t ed25519 -N "" -f "$key" "${comment_args[@]}"
+    ssh-keygen -t ed25519 -N "" -f "$key" ${comment_args[@]+"${comment_args[@]}"}
   fi
   ok "Key written to $key"
 fi

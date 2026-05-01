@@ -30,15 +30,16 @@ parse_selection() {
       ;;
   esac
 
-  # de-duplicate while preserving order
+  # de-duplicate while preserving order. The ${arr[@]+"${arr[@]}"} idiom is
+  # the bash-3.2-safe way to expand a possibly-empty array under `set -u`.
   local -a seen=() out=()
-  for s in "${SELECTED[@]}"; do
+  for s in ${SELECTED[@]+"${SELECTED[@]}"}; do
     if [[ " ${seen[*]:-} " != *" $s "* ]]; then
       seen+=("$s")
       out+=("$s")
     fi
   done
-  SELECTED=("${out[@]}")
+  SELECTED=(${out[@]+"${out[@]}"})
 }
 
 prompt_selection() {

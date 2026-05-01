@@ -28,8 +28,9 @@ protect_rc_symlink() {
 
 restore_rc_symlinks() {
   local entry rc target
-  for entry in "${YTERM_RC_RELINKS[@]:-}"; do
-    [[ -z "$entry" ]] && continue
+  # bash 3.2 (default on macOS) errors on "${arr[@]}" when arr is empty under
+  # `set -u`. The ${arr[@]+...} idiom yields nothing for empty arrays.
+  for entry in ${YTERM_RC_RELINKS[@]+"${YTERM_RC_RELINKS[@]}"}; do
     rc="${entry%%::*}"
     target="${entry##*::}"
     rm -f "$rc"
