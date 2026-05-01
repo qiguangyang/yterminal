@@ -42,6 +42,16 @@ trap restore_rc_symlinks EXIT
 protect_rc_symlink "$HOME/.zshrc"
 protect_rc_symlink "$HOME/.bashrc"
 
+# nvm refuses to coexist with `prefix` or `globalconfig` in ~/.npmrc — these
+# come from prior global-npm setups (e.g. an explicit ~/.npm-global prefix) and
+# cause `nvm use` to exit 11. Strip just those lines, preserving the rest of
+# the file, and back up the original next to it.
+if [[ -f "$HOME/.npmrc" ]] && grep -qE '^[[:space:]]*(prefix|globalconfig)[[:space:]]*=' "$HOME/.npmrc"; then
+  warn "~/.npmrc has 'prefix' or 'globalconfig' — incompatible with nvm. Stripping (backup at ~/.npmrc.preyterm.bak)."
+  cp "$HOME/.npmrc" "$HOME/.npmrc.preyterm.bak"
+  grep -vE '^[[:space:]]*(prefix|globalconfig)[[:space:]]*=' "$HOME/.npmrc.preyterm.bak" > "$HOME/.npmrc"
+fi
+
 log "Installing nvm"
 export NVM_DIR="$HOME/.nvm"
 if [[ ! -s "$NVM_DIR/nvm.sh" ]]; then
